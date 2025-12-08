@@ -21,19 +21,18 @@ describe("Pact Consumer Test", () => {
 
   it("creates a pact to verify", async () => {
     const formData = new FormData();
-
     formData.append("name", "John Doe");
-
+    const res = new Response(formData);
+    const txt = await res.text();
+    const headers = Object.fromEntries(res.headers.entries());
     await pact
       .addInteraction({
         uponReceiving: "a request for a foo",
         withRequest: {
           method: "POST",
           path: "/test",
-          body: formData,
-          headers: {
-            "Content-Type": `multipart/form-data`,
-          },
+          body: txt,
+          headers
         },
         willRespondWith: {
           status: 201,
@@ -42,15 +41,12 @@ describe("Pact Consumer Test", () => {
           },
         },
       })
-      .executeTest(async (mockServer) => {
+      .executeTest(async (mockServer) => {        
         const response = await fetch(`${mockServer.url}/test`, {
-          headers: {
-            "Content-Type": `multipart/form-data`,
-          },
           method: "POST",
-          body: formData,
+          body: txt,
+          headers
         });
-
         const data = await response.json();
 
         expect(data.foo).to.equal("bar");
